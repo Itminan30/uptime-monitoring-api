@@ -1,15 +1,14 @@
 /*
 * Title: Uptime Monitoring Application
 * Description: A RESTFul API to monitor up or down time of user defined links
-* Author: Sumit Saha
+* Author: Learn With Sumit
 * Learner: Itminan
 * Date: 11/6/2024
 */
 
 // dependencies
 const http = require("http");
-const url = require("url");
-const { StringDecoder } = require("string_decoder");
+const { handleReqRes } = require("./helpers/handleReqRes");
 
 // app object - module scaffolding
 const app = {};
@@ -28,33 +27,7 @@ app.createServer = () => {
 }
 
 // handle request response
-app.handleReqRes = (req, res) => {
-    // handle request
-    const parsedUrl = url.parse(req.url, true);
-    const path = parsedUrl.pathname;
-    const trimmedPath = path.replace(/^\/|\/$/g, '');
-    const method = req.method.toLowerCase();
-    const queryStringObject = parsedUrl.query;
-    const headerObject = req.headers;
-
-    const decoder = new StringDecoder("utf-8");
-    let realData = '';
-
-    req.on("data", (buffer) => {
-        realData += decoder.write(buffer);
-    })
-
-    req.on("end", () => {
-        realData += decoder.end();
-
-        console.log(queryStringObject, method, trimmedPath, headerObject, realData);
-        res.end("Hello programmers");
-    })
-
-    console.log(queryStringObject, method, trimmedPath, headerObject);
-    // handle response
-    
-}
+app.handleReqRes = handleReqRes;
 
 // start server
 app.createServer();
