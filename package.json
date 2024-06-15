@@ -2,6 +2,7 @@
   "name": "uptime-monitoring-api",
   "packageManager": "yarn@4.2.2",
   "scripts": {
-    "index" : "nodemon index.js"
+    "index" : "NODE_ENV=staging nodemon index.js",
+    "production" : "NODE_ENV=production nodemon index.js"
   }
 }

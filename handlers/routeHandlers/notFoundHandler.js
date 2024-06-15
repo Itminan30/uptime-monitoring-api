@@ -13,7 +13,8 @@ const handler = {};
 handler.notFoundHandler = (requestProperties, callback) => {
     console.log(requestProperties);
     callback(404, {
-        message: "This is a payload from notFoundHanlder"
+        message: "This is a payload from notFoundHanlder",
+        port: 5000
     });
 }
 
