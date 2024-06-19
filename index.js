@@ -24,6 +24,9 @@ const app = {};
 //     console.log("Error was: ", err);
 //     console.log("Data: ", data);
 // })
+data.update("test", "newFile", {"name": "England", "lang": "Engish"}, (err) => {
+    console.log("Error was: ", err);
+})
 
 
 // configuration
