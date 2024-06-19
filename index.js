@@ -17,9 +17,14 @@ const app = {};
 
 // testing file system
 // @TODO: will be removed later
-data.create("test", "newFile", {"name": "Bangladesh", "lang": "Bangla"}, (err) => {
-    console.log("Error was: ", err);
-})
+// data.create("test", "newFile", {"name": "Bangladesh", "lang": "Bangla"}, (err) => {
+//     console.log("Error was: ", err);
+// })
+// data.read("test", "newFile", (err, data) => {
+//     console.log("Error was: ", err);
+//     console.log("Data: ", data);
+// })
+
 
 // configuration
 app.config = {
