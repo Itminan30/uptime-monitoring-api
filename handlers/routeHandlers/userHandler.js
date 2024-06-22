@@ -112,40 +112,40 @@ handler._user.put = (requestProperties, callback) => {
 
     const password = typeof (requestProperties.body.password) === "string" && requestProperties.body.password.trim().length > 0 ? requestProperties.body.password : false;
 
-    if(phone) {
-        if(firstName || lastName || password) {
+    if (phone) {
+        if (firstName || lastName || password) {
             // lookup the user
-        data.read("users", phone, (err, userData) => {
-            const user = { ...parseJSON(userData) };
-            if (!err && user) {
-                if(firstName) {
-                    user.firstName = firstName;
-                }
-                if(lastName) {
-                    user.lastName = lastName;
-                }
-                if(password) {
-                    user.password = hash(password);
-                }
-
-                // update the database
-                data.update("users", phone, user, (err2) => {
-                    if(!err2) {
-                        callback(200, {
-                            message: "User updated successfully!!!"
-                        })
-                    } else {
-                        callback(500, {
-                            error: "Error updating the user!!!"
-                        })
+            data.read("users", phone, (err, userData) => {
+                const user = { ...parseJSON(userData) };
+                if (!err && user) {
+                    if (firstName) {
+                        user.firstName = firstName;
                     }
-                })
-            } else {
-                callback(404, {
-                    error: "Requested User was not found!!!"
-                });
-            }
-        })
+                    if (lastName) {
+                        user.lastName = lastName;
+                    }
+                    if (password) {
+                        user.password = hash(password);
+                    }
+
+                    // update the database
+                    data.update("users", phone, user, (err2) => {
+                        if (!err2) {
+                            callback(200, {
+                                message: "User updated successfully!!!"
+                            })
+                        } else {
+                            callback(500, {
+                                error: "Error updating the user!!!"
+                            })
+                        }
+                    })
+                } else {
+                    callback(404, {
+                        error: "Requested User was not found!!!"
+                    });
+                }
+            })
         } else {
             callback(400, {
                 error: "You haven't given any field for change!!!"
@@ -160,7 +160,35 @@ handler._user.put = (requestProperties, callback) => {
 
 // delete method
 handler._user.delete = (requestProperties, callback) => {
+    const phone = typeof (requestProperties.queryStringObject.phone) === "string" && requestProperties.queryStringObject.phone.trim().length === 11 ? requestProperties.queryStringObject.phone : false;
 
+    if (phone) {
+        // lookup the user
+        data.read("users", phone, (err, u) => {
+            const user = { ...parseJSON(u) };
+            if (!err && user) {
+                data.delete("users", phone, (err2) => {
+                    if(!err2) {
+                        callback(200, {
+                            message: "Successfully deleted user!!!"
+                        })
+                    } else {
+                        callback(400, {
+                            error: "Error deleting user data!!!"
+                        })
+                    }
+                })
+            } else {
+                callback(404, {
+                    error: "Requested User was not found!!!"
+                });
+            }
+        })
+    } else {
+        callback(404, {
+            error: "Phone number incorrect!!!"
+        });
+    }
 }
 
 module.exports = handler;
