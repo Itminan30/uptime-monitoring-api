@@ -27,9 +27,9 @@ const app = {};
 // data.update("test", "newFile", {"name": "England", "lang": "Engish"}, (err) => {
 //     console.log("Error was: ", err);
 // })
-data.delete("test", "newFile", (err) => {
-    console.log("Error was: ", err);
-})
+// data.delete("test", "newFile", (err) => {
+//     console.log("Error was: ", err);
+// })
 
 
 // configuration
