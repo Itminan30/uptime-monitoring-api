@@ -6,6 +6,9 @@
 * Date: 22/6/2024
 */
 
+// dependencies
+const data = require("../../lib/data");
+
 // module scaffolding
 const handler = {};
 
@@ -26,7 +29,40 @@ handler._user = {};
 
 // post method
 handler._user.post = (requestProperties, callback) => {
+    // data sanitization and validation
+    const firstName = typeof(requestProperties.body.firstName) === "string" && requestProperties.body.firstName.trim().length > 0 ? requestProperties.body.firstName : false;
 
+    const lastName = typeof(requestProperties.body.lastName) === "string" && requestProperties.body.lastName.trim().length > 0 ? requestProperties.body.lastName : false;
+
+    const phone = typeof(requestProperties.body.phone) === "string" && requestProperties.body.phone.trim().length === 11 ? requestProperties.body.phone : false;
+
+    const password = typeof(requestProperties.body.password) === "string" && requestProperties.body.password.trim().length > 0 ? requestProperties.body.password : false;
+
+    const tosAgreement = typeof(requestProperties.body.tosAgreement) === "boolean" ? requestProperties.body.tosAgreement : false;
+
+    // 
+    if(firstName && lastName && phone && password && tosAgreement) {
+        // check if the user already exists
+        data.read("users", phone, (err, user) => {
+            if(err) {
+                let userObject = {
+                    firstName, 
+                    lastName,
+                    phone,
+                    password,
+                    tosAgreement
+                };
+            } else {
+                callback(500, {
+                    "error": "User already exists or there was an error in server side"
+                })
+            }
+        })
+    } else {
+        callback(400, {
+            "error": "You have a probem in your request"
+        })
+    }
 }
 
 // get method
