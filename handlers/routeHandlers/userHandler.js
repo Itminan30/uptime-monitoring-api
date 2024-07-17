@@ -9,6 +9,7 @@
 // dependencies
 const data = require("../../lib/data");
 const { hash, parseJSON } = require("../../helpers/utilities");
+const tokenHandler = require("./tokenHandler");
 
 // module scaffolding
 const handler = {};
@@ -83,15 +84,25 @@ handler._user.get = (requestProperties, callback) => {
     const phone = typeof (requestProperties.queryStringObject.phone) === "string" && requestProperties.queryStringObject.phone.trim().length === 11 ? requestProperties.queryStringObject.phone : false;
 
     if (phone) {
-        // lookup the user
-        data.read("users", phone, (err, u) => {
-            const user = { ...parseJSON(u) };
-            if (!err && user) {
-                delete user.password;
-                callback(200, user);
+        // verify token
+        let token = typeof (requestProperties.headerObject.token) === "string" ? requestProperties.headerObject.token : false;
+        tokenHandler._token.varify(token, phone, (status) => {
+            if (status) {
+                // lookup the user
+                data.read("users", phone, (err, u) => {
+                    const user = { ...parseJSON(u) };
+                    if (!err && user) {
+                        delete user.password;
+                        callback(200, user);
+                    } else {
+                        callback(404, {
+                            error: "Requested User was not found!!!"
+                        });
+                    }
+                })
             } else {
-                callback(404, {
-                    error: "Requested User was not found!!!"
+                callback(403, {
+                    error: "User not authenticated! Token not valid!"
                 });
             }
         })
@@ -114,35 +125,45 @@ handler._user.put = (requestProperties, callback) => {
 
     if (phone) {
         if (firstName || lastName || password) {
-            // lookup the user
-            data.read("users", phone, (err, userData) => {
-                const user = { ...parseJSON(userData) };
-                if (!err && user) {
-                    if (firstName) {
-                        user.firstName = firstName;
-                    }
-                    if (lastName) {
-                        user.lastName = lastName;
-                    }
-                    if (password) {
-                        user.password = hash(password);
-                    }
+            // verify token
+            let token = typeof (requestProperties.headerObject.token) === "string" ? requestProperties.headerObject.token : false;
+            tokenHandler._token.varify(token, phone, (status) => {
+                if (status) {
+                    // lookup the user
+                    data.read("users", phone, (err, userData) => {
+                        const user = { ...parseJSON(userData) };
+                        if (!err && user) {
+                            if (firstName) {
+                                user.firstName = firstName;
+                            }
+                            if (lastName) {
+                                user.lastName = lastName;
+                            }
+                            if (password) {
+                                user.password = hash(password);
+                            }
 
-                    // update the database
-                    data.update("users", phone, user, (err2) => {
-                        if (!err2) {
-                            callback(200, {
-                                message: "User updated successfully!!!"
+                            // update the database
+                            data.update("users", phone, user, (err2) => {
+                                if (!err2) {
+                                    callback(200, {
+                                        message: "User updated successfully!!!"
+                                    })
+                                } else {
+                                    callback(500, {
+                                        error: "Error updating the user!!!"
+                                    })
+                                }
                             })
                         } else {
-                            callback(500, {
-                                error: "Error updating the user!!!"
-                            })
+                            callback(404, {
+                                error: "Requested User was not found!!!"
+                            });
                         }
                     })
                 } else {
-                    callback(404, {
-                        error: "Requested User was not found!!!"
+                    callback(403, {
+                        error: "User not authenticated! Token not valid!"
                     });
                 }
             })
@@ -163,24 +184,34 @@ handler._user.delete = (requestProperties, callback) => {
     const phone = typeof (requestProperties.queryStringObject.phone) === "string" && requestProperties.queryStringObject.phone.trim().length === 11 ? requestProperties.queryStringObject.phone : false;
 
     if (phone) {
-        // lookup the user
-        data.read("users", phone, (err, u) => {
-            const user = { ...parseJSON(u) };
-            if (!err && user) {
-                data.delete("users", phone, (err2) => {
-                    if(!err2) {
-                        callback(200, {
-                            message: "Successfully deleted user!!!"
+        // verify token
+        let token = typeof (requestProperties.headerObject.token) === "string" ? requestProperties.headerObject.token : false;
+        tokenHandler._token.varify(token, phone, (status) => {
+            if (status) {
+                // lookup the user
+                data.read("users", phone, (err, u) => {
+                    const user = { ...parseJSON(u) };
+                    if (!err && user) {
+                        data.delete("users", phone, (err2) => {
+                            if (!err2) {
+                                callback(200, {
+                                    message: "Successfully deleted user!!!"
+                                })
+                            } else {
+                                callback(400, {
+                                    error: "Error deleting user data!!!"
+                                })
+                            }
                         })
                     } else {
-                        callback(400, {
-                            error: "Error deleting user data!!!"
-                        })
+                        callback(404, {
+                            error: "Requested User was not found!!!"
+                        });
                     }
                 })
             } else {
-                callback(404, {
-                    error: "Requested User was not found!!!"
+                callback(403, {
+                    error: "User not authenticated! Token not valid!"
                 });
             }
         })
