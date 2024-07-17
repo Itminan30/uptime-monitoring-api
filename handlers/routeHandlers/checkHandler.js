@@ -59,13 +59,13 @@ handler._check.post = (requestProperties, callback) => {
                             if (validation) {
                                 let userObject = parseJSON(userData);
                                 let userChecks = typeof (userObject.checks) === "object" && userObject.checks instanceof Array ? userObject.checks : [];
-                                
-                                if(userChecks.length < maxChecks) {
+
+                                if (userChecks.length < maxChecks) {
                                     let checkId = createRandomString(20);
                                     let checkObject = {
                                         "id": checkId,
                                         userPhone,
-                                        protocol, 
+                                        protocol,
                                         url,
                                         method,
                                         successCodes,
@@ -73,7 +73,7 @@ handler._check.post = (requestProperties, callback) => {
                                     };
                                     // save the object
                                     data.create("checks", checkId, checkObject, (err3) => {
-                                        if(!err3) {
+                                        if (!err3) {
                                             // add cheakId to the user object
                                             // userObject.checks = userChecks;
                                             // userObject.checks.push(checkId);
@@ -82,7 +82,7 @@ handler._check.post = (requestProperties, callback) => {
 
                                             // save the new user data
                                             data.update("users", userPhone, userObject, (err4) => {
-                                                if(!err4) {
+                                                if (!err4) {
                                                     // return the data about the new check
                                                     callback(200, checkObject);
                                                 } else {
@@ -129,7 +129,35 @@ handler._check.post = (requestProperties, callback) => {
 
 // get method
 handler._check.get = (requestProperties, callback) => {
+    const id = typeof (requestProperties.queryStringObject.id) === "string" && requestProperties.queryStringObject.id.trim().length === 20 ? requestProperties.queryStringObject.id : false;
 
+    if (id) {
+        // lookup the check
+        data.read("checks", id, (err, checkData) => {
+            if (!err && checkData) {
+                // Get token from header data
+                let token = typeof (requestProperties.headerObject.token) === "string" ? requestProperties.headerObject.token : false;
+                // Verify token data
+                tokenHandler._token.varify(token, parseJSON(checkData).userPhone, (validation) => {
+                    if (validation) {
+                        callback(200, parseJSON(checkData));
+                    } else {
+                        callback(403, {
+                            "error": "Token Authentication failed!!!"
+                        });
+                    }
+                });
+            } else {
+                callback(500, {
+                    "error": "Server side error for getting check data"
+                });
+            }
+        })
+    } else {
+        callback(400, {
+            "error": "You have a probem in your request"
+        });
+    }
 }
 
 // put method
