@@ -46,7 +46,7 @@ handler._token.post = (requestProperties, callback) => {
                     expires
                 };
                 data.create("tokens", tokenId, tokenObject, (err2) => {
-                    if(!err2) {
+                    if (!err2) {
                         callback(200, tokenObject);
                     } else {
                         callback(500, {
@@ -69,7 +69,25 @@ handler._token.post = (requestProperties, callback) => {
 
 // get method
 handler._token.get = (requestProperties, callback) => {
+    const id = typeof (requestProperties.queryStringObject.id) === "string" && requestProperties.queryStringObject.id.trim().length === 20 ? requestProperties.queryStringObject.id : false;
 
+    if (id) {
+        // lookup the token
+        data.read("tokens", id, (err, tokenData) => {
+            const token = { ...parseJSON(tokenData) };
+            if (!err && token) {
+                callback(200, token);
+            } else {
+                callback(404, {
+                    error: "Requested token was not found!!!"
+                });
+            }
+        })
+    } else {
+        callback(404, {
+            error: "token number incorrect!!!"
+        });
+    }
 }
 
 // put method
