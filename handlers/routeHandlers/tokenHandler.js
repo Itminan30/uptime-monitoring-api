@@ -96,14 +96,14 @@ handler._token.put = (requestProperties, callback) => {
 
     const extend = typeof (requestProperties.body.extend) === "boolean" && requestProperties.body.extend === true ? true : false;
 
-    if(id && extend) {
+    if (id && extend) {
         data.read("tokens", id, (err1, tokenData) => {
             let tokenObject = parseJSON(tokenData);
-            if(tokenObject.expires > Date.now()) {
+            if (tokenObject.expires > Date.now()) {
                 tokenObject.expires = Date.now() + 3600 * 1000;
                 // store the updated token
                 data.update("tokens", id, tokenObject, (err2) => {
-                    if(!err2) {
+                    if (!err2) {
                         callback(200);
                     } else {
                         callback(500, {
@@ -126,7 +126,36 @@ handler._token.put = (requestProperties, callback) => {
 
 // delete method
 handler._token.delete = (requestProperties, callback) => {
+    // check if the token is valid
+    const id = typeof (requestProperties.queryStringObject.id) === "string" && requestProperties.queryStringObject.id.trim().length === 20 ? requestProperties.queryStringObject.id : false;
 
+    if (id) {
+        // lookup the token
+        data.read("tokens", id, (err, tokenData) => {
+            const token = { ...parseJSON(tokenData) };
+            if (!err && token) {
+                data.delete("tokens", id, (err2) => {
+                    if (!err2) {
+                        callback(200, {
+                            message: "Successfully deleted token!!!"
+                        })
+                    } else {
+                        callback(400, {
+                            error: "Error deleting user token!!!"
+                        })
+                    }
+                })
+            } else {
+                callback(404, {
+                    error: "Requested token was not found!!!"
+                });
+            }
+        })
+    } else {
+        callback(404, {
+            error: "token id incorrect!!!"
+        });
+    }
 }
 
 module.exports = handler;
