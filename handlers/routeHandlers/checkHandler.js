@@ -187,25 +187,25 @@ handler._check.put = (requestProperties, callback) => {
                     // Check validity of token
                     tokenHandler._token.varify(token, checkObject.userPhone, (validation) => {
                         if (validation) {
-                            if(protocol) {
+                            if (protocol) {
                                 checkObject.protocol = protocol;
                             }
-                            if(method) {
+                            if (method) {
                                 checkObject.method = method;
                             }
-                            if(url) {
+                            if (url) {
                                 checkObject.url = url;
                             }
-                            if(successCodes) {
+                            if (successCodes) {
                                 checkObject.successCodes = successCodes;
                             }
-                            if(timeoutSeconds) {
+                            if (timeoutSeconds) {
                                 checkObject.timeoutSeconds = timeoutSeconds;
                             }
 
                             // update the checked object
                             data.update("checks", id, checkObject, (err2) => {
-                                if(!err2) {
+                                if (!err2) {
                                     callback(200);
                                 } else {
                                     callback(500, {
@@ -240,7 +240,76 @@ handler._check.put = (requestProperties, callback) => {
 
 // delete method
 handler._check.delete = (requestProperties, callback) => {
+    const id = typeof (requestProperties.queryStringObject.id) === "string" && requestProperties.queryStringObject.id.trim().length === 20 ? requestProperties.queryStringObject.id : false;
 
+    if (id) {
+        // lookup the check
+        data.read("checks", id, (err, checkData) => {
+            if (!err && checkData) {
+                // Get token from header data
+                let token = typeof (requestProperties.headerObject.token) === "string" ? requestProperties.headerObject.token : false;
+                // Verify token data
+                tokenHandler._token.varify(token, parseJSON(checkData).userPhone, (validation) => {
+                    if (validation) {
+                        // delete checks data
+                        data.delete("checks", id, (err1) => {
+                            if (!err1) {
+                                // delete the check id from userdata
+                                data.read("users", parseJSON(checkData).userPhone, (err2, userData) => {
+                                    let userObject = parseJSON(userData);
+                                    if(!err2 && userData) {
+                                        let userChecks = typeof(userObject.checks) === "object" && userObject.checks instanceof Array ? userObject.checks : [];
+
+                                        // remove the deleted checkId form the checks array.
+                                        let checkPosition = userChecks.indexOf(id);
+                                        if(checkPosition > -1) {
+                                            userChecks.splice(checkPosition, 1);
+                                            
+                                            // resave the user data
+                                            userObject.checks = userChecks;
+                                            data.update("users", userObject.phone, userObject, (err3) => {
+                                                if(!err3) {
+                                                    callback(200);
+                                                } else {
+                                                    callback(500, {
+                                                        "error": "Server side error for updating new user data"
+                                                    });
+                                                }
+                                            })
+                                        } else {
+                                            callback(500, {
+                                                "error": "The checkId to be removed is not found!!!"
+                                            });
+                                        }
+                                    } else {
+                                        callback(500, {
+                                            "error": "Server side error for reading user data"
+                                        });
+                                    }
+                                })
+                            } else {
+                                callback(500, {
+                                    "error": "Server side error for deleting check data"
+                                });
+                            }
+                        })
+                    } else {
+                        callback(403, {
+                            "error": "Token Authentication failed!!!"
+                        });
+                    }
+                });
+            } else {
+                callback(500, {
+                    "error": "Server side error for getting check data"
+                });
+            }
+        })
+    } else {
+        callback(400, {
+            "error": "You have a probem in your request"
+        });
+    }
 }
 
 module.exports = handler;
