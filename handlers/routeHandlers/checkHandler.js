@@ -162,7 +162,80 @@ handler._check.get = (requestProperties, callback) => {
 
 // put method
 handler._check.put = (requestProperties, callback) => {
+    const id = typeof (requestProperties.body.id) === "string" && requestProperties.body.id.trim().length === 20 ? requestProperties.body.id : false;
 
+    // validate inputs
+    let protocol = typeof (requestProperties.body.protocol) === "string" && ["http", "https"].indexOf(requestProperties.body.protocol) > -1 ? requestProperties.body.protocol : false;
+
+    let url = typeof (requestProperties.body.url) === "string" && requestProperties.body.url.trim().length > 0 ? requestProperties.body.url : false;
+
+    let method = typeof (requestProperties.body.method) === "string" && ["get", "post", "put", "delete"].indexOf(requestProperties.body.method) > -1 ? requestProperties.body.method : false;
+
+    let successCodes = typeof (requestProperties.body.successCodes) === "object" && requestProperties.body.successCodes instanceof Array ? requestProperties.body.successCodes : false;
+
+    let timeoutSeconds = typeof (requestProperties.body.timeoutSeconds) === "number" && requestProperties.body.timeoutSeconds % 1 === 0 && requestProperties.body.timeoutSeconds >= 1 && requestProperties.body.timeoutSeconds <= 5 ? requestProperties.body.timeoutSeconds : false;
+
+    if (id) {
+        if (protocol || url || method || successCodes || timeoutSeconds) {
+            // read checkdata for phone number
+            data.read("checks", id, (err1, checkData) => {
+                if (!err1 && checkData) {
+                    // Extract checkObject
+                    const checkObject = parseJSON(checkData);
+                    // Get token data from header
+                    let token = typeof (requestProperties.headerObject.token) === "string" ? requestProperties.headerObject.token : false;
+                    // Check validity of token
+                    tokenHandler._token.varify(token, checkObject.userPhone, (validation) => {
+                        if (validation) {
+                            if(protocol) {
+                                checkObject.protocol = protocol;
+                            }
+                            if(method) {
+                                checkObject.method = method;
+                            }
+                            if(url) {
+                                checkObject.url = url;
+                            }
+                            if(successCodes) {
+                                checkObject.successCodes = successCodes;
+                            }
+                            if(timeoutSeconds) {
+                                checkObject.timeoutSeconds = timeoutSeconds;
+                            }
+
+                            // update the checked object
+                            data.update("checks", id, checkObject, (err2) => {
+                                if(!err2) {
+                                    callback(200);
+                                } else {
+                                    callback(500, {
+                                        "error": "Server failed to update check!!!"
+                                    });
+                                }
+                            })
+                        } else {
+                            callback(403, {
+                                "error": "Token Authentication failed!!!"
+                            });
+                        }
+                    });
+
+                } else {
+                    callback(500, {
+                        "error": "Error reading check data!!!"
+                    });
+                }
+            })
+        } else {
+            callback(400, {
+                "error": "You must provide atleast one field to update!!!"
+            });
+        }
+    } else {
+        callback(400, {
+            "error": "You have a probem in your request"
+        });
+    }
 }
 
 // delete method
